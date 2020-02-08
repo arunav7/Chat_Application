@@ -1,10 +1,13 @@
+require('../db/mongoose')
 const path = require('path')
 const http = require('http')
 const express = require('express')
+const bodyParser = require('body-parser')
 const socketio = require('socket.io')
 const Filter = require('bad-words')
 const { generateMessage, generateLocationMessage } = require('./utils/utils')
 const { addUsers, removeUser, getUser, getUserInRoom } = require('./utils/users')
+const User = require('../model/user')
 
 const app = express()
 const server = http.createServer(app)
@@ -14,6 +17,30 @@ const port = process.env.PORT
 
 const publicDirectory = path.join(__dirname, '../public')
 app.use(express.static(publicDirectory))
+app.use(bodyParser.json())
+app.use(bodyParser.urlencoded({
+    extended: true
+}))
+
+app.post('/sign_up', async (req, res) => {
+    try{
+        const user = new User({
+            email: req.body.email,
+            password: req.body.password
+        })
+        await user.save()
+        res.redirect('../public/home.html')
+    } catch(e) {
+        res.send(e)
+    }
+})
+
+app.get('/', (req, res) => {
+    res.set({
+        'Access-control-Allow-Origin': '*'
+    })
+    return res.redirect('../public/index.html')
+})
 
 io.on('connection', (socket) => {
     console.log('New WebSocket connection established')
